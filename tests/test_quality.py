@@ -264,3 +264,43 @@ def test_cli_quality_checks(tmp_path, capsys, monkeypatch):
     assert main(["runs", "verify", "run_v031fixtureb", "--experiments-dir", str(manager.root), "--quality-checks",
                  "--format", "json", "--audit-output", str(tmp_path / "eq.json")]) == 0
     assert json.loads((tmp_path / "eq.json").read_text())["kind"] == "experiment_audit"
+
+
+@pytest.mark.parametrize(
+    ("filename", "format_args", "expected_format", "prefix"),
+    [
+        ("audit.md", [], "markdown", "# OpenBench AI quality audit (dataset_audit)"),
+        ("audit.markdown", [], "markdown", "# OpenBench AI quality audit (dataset_audit)"),
+        ("audit.csv", [], "csv", "check_id,severity,"),
+        ("audit.CSV", [], "csv", "check_id,severity,"),
+        ("audit.json", [], "json", "{"),
+        ("audit.txt", [], "json", "{"),
+        ("audit.html", [], "json", "{"),
+        ("audit", [], "json", "{"),
+        ("audit.md", ["--format", "csv"], "csv", "check_id,severity,"),
+    ],
+)
+def test_cli_dataset_audit_output_format(
+    tmp_path, capsys, filename, format_args, expected_format, prefix
+):
+    dataset = _write(tmp_path / "data.jsonl", [_rec("a")])
+    output = tmp_path / filename
+    args = ["validate-dataset", str(dataset), "--quality-checks", "--output", str(output)]
+    assert main([*args, *format_args]) == 0
+    assert output.read_text(encoding="utf-8").startswith(prefix)
+    message = capsys.readouterr().out.splitlines()[-1]
+    assert message == f"Audit report ({expected_format}) written to: {output}"
+
+
+@pytest.mark.parametrize(
+    "flags",
+    [["--output", "audit.md"], ["--format", "json"], ["--output", "audit.md", "--format", "csv"]],
+)
+def test_cli_plain_validation_explains_audit_flags(tmp_path, capsys, monkeypatch, flags):
+    monkeypatch.chdir(tmp_path)
+    dataset = _write(tmp_path / "data.jsonl", [_rec("a")])
+    assert main(["validate-dataset", str(dataset), *flags]) == 0
+    captured = capsys.readouterr()
+    assert captured.out.startswith("Dataset valid:")
+    assert "--output and --format only apply with --quality-checks" in captured.err
+    assert not (tmp_path / "audit.md").exists()

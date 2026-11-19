@@ -3,12 +3,13 @@
 Audits are **read-only**. They never rewrite, delete, reorder or "fix" records, never change scores, and never hide a finding. Exit code 1 means at least one *error* finding; warnings and info exit 0.
 
 ```bash
-openbench validate-dataset datasets/ --quality-checks --format markdown --output dataset_audit.md
+openbench validate-dataset datasets/ --quality-checks --output dataset_audit.md
 openbench validate-dataset my.jsonl --quality-checks --metrics exact_match f1 --near-duplicate-threshold 0.9
 openbench runs verify run_<id> --quality-checks          # or grp_<id>
 ```
 
-Without `--quality-checks`, `validate-dataset` behaves exactly as in v0.3.1.
+Unless you pass `--format`, the dataset audit writes Markdown for `.md` or `.markdown`, CSV for `.csv`, and JSON for all other filenames.
+Without `--quality-checks`, `validate-dataset` runs normal validation and prints a note to stderr if you pass `--output` or `--format`.
 
 Each finding has a stable check ID, a severity (`error`, `warning` or `info`), a title, an explanation, the affected record or run IDs, a suggested remediation, details and, for reviewed records, a classification.
 

@@ -11,8 +11,8 @@ Validate a JSONL dataset file or directory of JSONL files.
 | :--- | :---: | :--- | :--- | :--- |
 | `dataset_path` | yes |  |  | Path to a JSONL dataset file or directory. |
 | `--quality-checks` |  |  |  | *(v0.4.0)* also run the read-only dataset quality audit (exit 1 only for error findings). |
-| `--output` |  |  |  | *(v0.4.0)* write the audit report to this file. |
-| `--format` |  | `json` | `json`, `markdown`, `csv` | *(v0.4.0)* audit report format. |
+| `--output` |  |  |  | *(v0.4.0)* with --quality-checks, write the audit report to this file. |
+| `--format` |  |  | `json`, `markdown`, `csv` | *(v0.4.0)* with --quality-checks, override the format inferred from --output (.md or .markdown for Markdown, .csv for CSV, otherwise JSON). |
 | `--near-duplicate-threshold` |  | `0.85` |  | *(v0.4.0)* DQ003 Jaccard threshold. |
 | `--metrics` |  |  |  | *(v0.4.0)* metric names to check (DQ008). |
 | `--near-duplicate-method` |  | `lexical` | `lexical`, `semantic` | v0.5.0: 'semantic' adds an embedding pass that finds paraphrases (needs the 'semantic' extra). |

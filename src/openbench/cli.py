@@ -113,8 +113,15 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="v0.4.0: also run the read-only dataset quality audit (exit 1 only for error findings).",
     )
-    val_parser.add_argument("--output", type=str, default=None, help="v0.4.0: write the audit report to this file.")
-    val_parser.add_argument("--format", choices=["json", "markdown", "csv"], default="json", help="v0.4.0: audit report format.")
+    val_parser.add_argument(
+        "--output", type=str, default=None,
+        help="v0.4.0: with --quality-checks, write the audit report to this file.",
+    )
+    val_parser.add_argument(
+        "--format", choices=["json", "markdown", "csv"], default=None,
+        help="v0.4.0: with --quality-checks, override the format inferred from --output "
+             "(.md or .markdown for Markdown, .csv for CSV, otherwise JSON).",
+    )
     val_parser.add_argument("--near-duplicate-threshold", type=float, default=0.85, help="v0.4.0: DQ003 Jaccard threshold.")
     val_parser.add_argument("--metrics", nargs="+", default=None, help="v0.4.0: metric names to check (DQ008).")
     val_parser.add_argument(
@@ -939,10 +946,13 @@ def _handle_dataset_audit(args: argparse.Namespace) -> int:
         print(f"Dataset does not load: {exc}", file=sys.stderr)
     _print_audit_summary(payload, args.dataset_path)
     if args.output:
+        output_format = args.format or _format_from_output_extension(
+            args.output, ("json", "markdown", "csv"), default="json",
+        )
         out = validate_safe_output_path(args.output)
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(render_audit(payload, args.format), encoding="utf-8")
-        print(f"Audit report written to: {out}")
+        out.write_text(render_audit(payload, output_format), encoding="utf-8")
+        print(f"Audit report ({output_format}) written to: {out}")
     return report.exit_code
 
 
@@ -2712,6 +2722,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "validate-dataset":
             if getattr(args, "quality_checks", False):
                 return _handle_dataset_audit(args)
+            if args.output is not None or args.format is not None:
+                print(
+                    "Note: --output and --format only apply with --quality-checks. "
+                    "No report was written.",
+                    file=sys.stderr,
+                )
             return _handle_validate_dataset(args.dataset_path)
         if args.command == "evaluate":
             return _handle_evaluate(args)
